@@ -1,12 +1,13 @@
 package main
 
 import (
+	"core/utils/config"
+	Log "core/utils/logutil"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/Unknwon/goconfig"
 	"github.com/gorilla/mux"
 	"github.com/qiniu/api.v7/auth/qbox"
 	"github.com/qiniu/api.v7/rtc"
@@ -19,24 +20,14 @@ var (
 
 func init() {
 
-	//加载配置文件
-	cfg, err := goconfig.LoadConfigFile("conf.ini")
-	if err != nil {
+	Conf := config.Conf
+	if Conf == nil {
 		fmt.Println("加载配置文件conf.ini失败。请检查当前目录下是否存在该文件。")
-		return
 	}
 
-	sec, err := cfg.GetSection("super")
-	if err != nil {
-		fmt.Println("加载配置super配置项失败。请检查配置文件。")
-		return
-	}
+	appID = Conf.AppID
 
-	accessKey := getConfigByKey(sec, "accessKey")
-	secretKey := getConfigByKey(sec, "secretKey")
-	appID = getConfigByKey(sec, "appID")
-
-	mac := qbox.NewMac(accessKey, secretKey)
+	mac := qbox.NewMac(Conf.AccessKey, Conf.SecretKey)
 	manager = rtc.NewManager(mac)
 }
 
@@ -48,10 +39,6 @@ func getConfigByKey(cfg map[string]string, key string) (value string) {
 		value = val
 	}
 	return
-}
-
-func logHandle(request *http.Request) {
-	fmt.Println("Clinet:", request.RemoteAddr, "\nURL:", request.URL)
 }
 
 func main() {
@@ -67,12 +54,12 @@ func main() {
 }
 
 func Index(writer http.ResponseWriter, request *http.Request) {
-	logHandle(request)
+	Log.RequestInfo(request)
 	fmt.Fprintln(writer, "Welcome Go! ")
 }
 
 func GetToken(writer http.ResponseWriter, request *http.Request) {
-	logHandle(request)
+	Log.RequestInfo(request)
 
 	vars := mux.Vars(request)
 	roomName := vars["roomName"]
