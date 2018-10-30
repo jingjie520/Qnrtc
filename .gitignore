@@ -8,12 +8,16 @@
 # Test binary, build with `go test -c`
 *.test
 
+#VSCODE
+.vscode
+pkg/
+bin/
+*.code-workspace
+
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-.vscode
+
 
 src/conf.ini
 *.log
-bin/
-pkg/
-*.code-workspace
