@@ -5,7 +5,6 @@ import (
 	Log "core/utils/logutil"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -20,25 +19,17 @@ var (
 
 func init() {
 
+	//加载配置文件
 	Conf := config.Conf
 	if Conf == nil {
 		fmt.Println("加载配置文件conf.ini失败。请检查当前目录下是否存在该文件。")
 	}
 
+	//初始化七牛云
 	appID = Conf.AppID
 
 	mac := qbox.NewMac(Conf.AccessKey, Conf.SecretKey)
 	manager = rtc.NewManager(mac)
-}
-
-func getConfigByKey(cfg map[string]string, key string) (value string) {
-	if val, ok := cfg[key]; !ok {
-		fmt.Println("加载配置super.", key, "失败。请检查配置文件。")
-		os.Exit(0)
-	} else {
-		value = val
-	}
-	return
 }
 
 func main() {
@@ -53,11 +44,13 @@ func main() {
 	http.ListenAndServe(":80", router)
 }
 
+//Index 默认首页
 func Index(writer http.ResponseWriter, request *http.Request) {
 	Log.RequestInfo(request)
 	fmt.Fprintln(writer, "Welcome Go! ")
 }
 
+//GetToken 获取Token
 func GetToken(writer http.ResponseWriter, request *http.Request) {
 	Log.RequestInfo(request)
 
@@ -65,17 +58,11 @@ func GetToken(writer http.ResponseWriter, request *http.Request) {
 	roomName := vars["roomName"]
 	userID := vars["userId"]
 
-	token, err := getRoomToken(appID, roomName, userID)
+	token, err := manager.GetRoomToken(rtc.RoomAccess{AppID: appID, RoomName: roomName, UserID: userID, ExpireAt: time.Now().Unix() + 36000, Permission: "user"})
 
 	if err == nil {
 		writer.Write([]byte(token))
 	} else {
 		fmt.Fprintln(writer, "获取TOKEN失败。", err)
 	}
-
-}
-
-func getRoomToken(appId, roomName, userID string) (token string, err error) {
-	token, err = manager.GetRoomToken(rtc.RoomAccess{AppID: appId, RoomName: roomName, UserID: userID, ExpireAt: time.Now().Unix() + 36000, Permission: "user"})
-	return
 }
