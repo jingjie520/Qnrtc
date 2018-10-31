@@ -17,10 +17,14 @@ import (
 // Log Logger日志对象
 var Log *logrus.Logger
 
+func init() {
+	Log = newLogger()
+}
+
 /*
-NewLogger Create Logger
+newLogger Create Logger
 */
-func NewLogger() *logrus.Logger {
+func newLogger() *logrus.Logger {
 	if Log != nil {
 		return Log
 	}
@@ -36,11 +40,8 @@ func NewLogger() *logrus.Logger {
 	logName := Conf.LogName
 
 	ConfigLocalFilesystemLogger(logPath, logName, time.Hour*24*365, time.Hour*24)
-	return Log
-}
 
-func init() {
-	Log = NewLogger()
+	return Log
 }
 
 /*
@@ -71,15 +72,15 @@ func ConfigLocalFilesystemLogger(logPath string, logFileName string, maxAge time
 	)
 	if err != nil {
 		Log.Errorf("config local file system logger error. %+v", errors.WithStack(err))
+	} else {
+		lfHook := lfshook.NewHook(lfshook.WriterMap{
+			logrus.DebugLevel: writer, // 为不同级别设置不同的输出目的
+			logrus.InfoLevel:  writer,
+			logrus.WarnLevel:  writer,
+			logrus.ErrorLevel: writer,
+			logrus.FatalLevel: writer,
+			logrus.PanicLevel: writer,
+		}, &logrus.JSONFormatter{})
+		Log.AddHook(lfHook)
 	}
-
-	lfHook := lfshook.NewHook(lfshook.WriterMap{
-		logrus.DebugLevel: writer, // 为不同级别设置不同的输出目的
-		logrus.InfoLevel:  writer,
-		logrus.WarnLevel:  writer,
-		logrus.ErrorLevel: writer,
-		logrus.FatalLevel: writer,
-		logrus.PanicLevel: writer,
-	}, &logrus.JSONFormatter{})
-	Log.AddHook(lfHook)
 }
